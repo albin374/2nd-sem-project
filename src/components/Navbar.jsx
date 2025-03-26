@@ -1,39 +1,43 @@
 // src/components/Navbar.jsx
-import React, { useState, useEffect } from 'react';
-import { auth } from '../firebase'; // Firebase config
-import { signOut } from 'firebase/auth';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 
-const Navbar = () => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((authUser) => {
-      setUser(authUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
-
+const Navbar = ({ searchQuery, setSearchQuery, handleSearch }) => {
   return (
-    <nav className="flex justify-between items-center bg-gray-900 text-white p-4">
-      <Link to="/" className="text-2xl font-bold">⚡ EV Finder</Link>
-
-      <div className="space-x-4">
-        {user ? (
-          <>
-            <Link to="/profile" className="hover:text-green-400">View Profile</Link>
-            <button onClick={handleLogout} className="hover:text-red-400">Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="hover:text-blue-400">Login</Link>
-            <Link to="/signup" className="hover:text-yellow-400">Create Account</Link>
-          </>
-        )}
+    <nav className="bg-gradient-to-r from-indigo-700 via-purple-700 to-blue-700 p-4 text-white flex justify-between items-center shadow-lg">
+      <div>
+        <Link to="/" className="text-2xl font-bold tracking-wide hover:text-yellow-300 transition duration-300">
+          ⚡ EV Charger Locator
+        </Link>
+      </div>
+      <div className="flex gap-4 items-center">
+        {/* Search Input */}
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search location..."
+          className="p-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={handleSearch}
+          className="bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded transition duration-300"
+        >
+          Search
+        </button>
+        {/* Login and Create Account Links */}
+        <Link
+          to="/login"
+          className="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded shadow-md transition duration-300"
+        >
+          Login
+        </Link>
+        <Link
+          to="/signup"
+          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow-md transition duration-300"
+        >
+          Create Account
+        </Link>
       </div>
     </nav>
   );
