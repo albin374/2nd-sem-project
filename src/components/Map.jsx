@@ -1,5 +1,5 @@
 // src/components/Map.js
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   GoogleMap,
   LoadScript,
@@ -12,7 +12,7 @@ const mapContainerStyle = {
   height: "500px",
 };
 
-// Center of Kerala
+// Center of Kerala (default location)
 const center = {
   lat: 10.8505,
   lng: 76.2711,
@@ -39,11 +39,18 @@ const chargingStationIcon = {
   scaledSize: { width: 30, height: 30 }, // Icon size
 };
 
-const Map = () => {
+const Map = ({ searchedLocation }) => {
   const [hoveredStation, setHoveredStation] = useState(null);
   const [placeName, setPlaceName] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const mapRef = useRef(null);
+
+  // Move map to searched location if available
+  useEffect(() => {
+    if (searchedLocation && mapRef.current) {
+      mapRef.current.panTo(searchedLocation);
+      mapRef.current.setZoom(12); // Zoom to show searched location
+    }
+  }, [searchedLocation]);
 
   // Fetch place name using Geocoding API
   const getPlaceName = async (lat, lng) => {
@@ -77,76 +84,58 @@ const Map = () => {
     setPlaceName("");
   };
 
-  // Search and move map to searched location
-  const handleSearch = async () => {
-    if (!searchQuery) return;
-
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-      searchQuery
-    )}&key=${apiKey}`;
-
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-      if (data.status === "OK" && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
-        if (mapRef.current) {
-          mapRef.current.panTo(location);
-          mapRef.current.setZoom(12);
-        }
-      } else {
-        alert("Location not found. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error fetching location:", error);
-      alert("Error fetching location.");
-    }
-  };
-
   return (
-    <>
-      <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          zoom={7}
-          center={center}
-          onLoad={(map) => (mapRef.current = map)}
-          options={{
-            restriction: {
-              latLngBounds: keralaBounds,
-              strictBounds: true,
-            },
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-          }}
-        >
-          {/* Render charging station markers */}
-          {chargingStations.map((station, index) => (
-            <Marker
-              key={index}
-              position={station}
-              icon={chargingStationIcon}
-              onMouseOver={() => handleMouseOver(station)}
-              onMouseOut={handleMouseOut}
-            />
-          ))}
+    <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={7}
+        center={center}
+        onLoad={(map) => (mapRef.current = map)}
+        options={{
+          restriction: {
+            latLngBounds: keralaBounds,
+            strictBounds: true,
+          },
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+        }}
+      >
+        {/* Render charging station markers */}
+        {chargingStations.map((station, index) => (
+          <Marker
+            key={index}
+            position={station}
+            icon={chargingStationIcon}
+            onMouseOver={() => handleMouseOver(station)}
+            onMouseOut={handleMouseOut}
+          />
+        ))}
 
-          {/* Show InfoWindow on hover */}
-          {hoveredStation && (
-            <InfoWindow
-              position={hoveredStation}
-              options={{ disableAutoPan: true }}
-            >
-              <div>
-                <strong>📍 {placeName}</strong>
-              </div>
-            </InfoWindow>
-          )}
-        </GoogleMap>
-      </LoadScript>
-    </>
+        {/* Show InfoWindow on hover */}
+        {hoveredStation && (
+          <InfoWindow
+            position={hoveredStation}
+            options={{ disableAutoPan: true }}
+          >
+            <div>
+              <strong>📍 {placeName}</strong>
+            </div>
+          </InfoWindow>
+        )}
+
+        {/* Marker for searched location */}
+        {searchedLocation && (
+          <Marker
+            position={searchedLocation}
+            icon={{
+              url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Red dot for searched location
+              scaledSize: { width: 40, height: 40 },
+            }}
+          />
+        )}
+      </GoogleMap>
+    </LoadScript>
   );
 };
 
